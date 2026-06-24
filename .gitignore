@@ -1,0 +1,23 @@
+# Helyi beállítások — SOHA ne kerüljön a (nyilvános) repóba!
+# Ez tartalmazza az API kulcsot, a partnerlistát és a célmappát.
+config.json
+
+# Személyes / fejlesztői jegyzetek — nem nyilvánosak (helyben megmaradnak)
+CLAUDE.md
+FEJLESZTOI_JEGYZET.md
+docs/specs/
+
+# Adatok: szkennelt PDF-ek, számlázós exportok — soha
+data/
+*.xls
+*.xlsx
+
+# Az apának küldött csomag
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
