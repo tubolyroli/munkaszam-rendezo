@@ -18,7 +18,10 @@ A program a kézírást olvassa be, és ez néha téveszt. Ezért **mentés elő
 a táblázatot** — ez a legfontosabb lépés. Pár perc ellenőrzés megelőzi a rossz helyre
 sorolást.
 
-- **Sárga sorok:** ezek bizonytalan beolvasások — ezeket nézd át a legalaposabban.
+- **Sárga sorok:** ezeknél valami **hiányzik** — vagy nincs kiválasztva a partner, vagy a
+  munkaszám nem `M` + szám alakú. A sor jobb szélén a **Teendő** oszlop megmondja, mi a gond
+  (pl. „hiányzik: partner"). Ahogy kijavítod, a sárga **azonnal eltűnik**, és a sor zöld
+  „rendben" jelzést kap. Lent a program kiírja, hány sor igényel még figyelmet.
 - **„Új dokumentum" pipa:** ott legyen bepipálva, ahol tényleg új dokumentum kezdődik.
   Ha egy folytatólagos oldal sarkában véletlen folt/pecsét van, a gép tévesen új
   dokumentumnak hiheti — vedd ki a pipát. Ha egy első oldalon a felirat halvány és a gép
@@ -77,11 +80,22 @@ mert akkor kétszer menti el.
    - **kis képet** a sarokról (amit a gép beolvasott);
    - **"Új dokumentum"** pipát — ez azt jelzi, hogy itt **új dokumentum kezdődik**.
      Ha a gép tévedett, vedd ki vagy tedd be a pipát;
-   - **Partner** — válaszd a listából, vagy írj be újat;
-   - **Munkaszám** — ellenőrizd, hogy jó-e (`M` + szám, pl. `M123`).
-   - A **sárgával jelölt sorok** bizonytalan beolvasások — ezeket nézd át figyelmesen.
+   - **Partner** — válaszd a listából. **Új partnert** úgy adsz hozzá, hogy egyszerűen
+     **beírod a nevét** ebbe a mezőbe (nem kell előre felvenni) — mentéskor a program
+     automatikusan megjegyzi a következő alkalomra;
+   - **Munkaszám** — ellenőrizd, hogy jó-e (`M` + szám, pl. `M123`);
+   - **Teendő** — a sor jobb szélén jelzi, ha valami hiányzik.
+   - A **sárgával jelölt sorok** hiányosak (nincs partner, vagy rossz a munkaszám) — ezeket
+     javítsd. Ahogy kijavítod, a sárga eltűnik.
 6. **Mentés.** Ha mindent rendben találtál, kattints a "Dokumentumok mentése" gombra.
-   A program a megfelelő mappákba teszi a fájlokat, és kiírja, hány dokumentum készült.
+   A program a megfelelő mappákba teszi a fájlokat. Utána egy **ablak jelenik meg**, ami
+   pontosan **felsorolja, mely fájlokat hova mentette**, és három gombot kínál:
+   - **Mappa megnyitása** — megnyitja a célmappát, hogy lásd az eredményt;
+   - **Új rendezés** — kiüríti a táblázatot a következő PDF-hez;
+   - **Bezárás** — bezárja ezt az ablakot (a program nyitva marad).
+
+   Mentés után a "Dokumentumok mentése" gomb kikapcsol, amíg új PDF-et nem töltesz be —
+   így **véletlenül sem mented el kétszer** ugyanazt.
 
 ## Hogyan néz ki az eredmény?
 
@@ -107,8 +121,18 @@ Célmappa/
   munkaszám `M` + szám alakra javítása, pl. `M123`), majd mentsd újra.
 - **"Hiba a beolvasás közben":** általában az internet vagy az API kulcs a gond.
   Ellenőrizd az internetkapcsolatot, és a kulcsot a Beállításokban.
+- **"Váratlan hiba" ablak:** ha valami nem várt hiba történik, a program egy üzenetben
+  megmutatja a részleteket (a program nem áll le). Készíts róla **képernyőképet**, és küldd
+  el a fiadnak — a részletekből látja, mi a baj.
 - **A kis fekete ablakban hibaüzenet jelenik meg:** készíts róla képernyőképet, és
   küldd el a fiadnak.
+
+## Frissítés (ha új verzió érkezik)
+
+Ha a fiad javít vagy fejleszt a programon, nagyon egyszerű frissíteni: kattints duplán a
+`frissites.bat` fájlra. Letölti a legújabb verziót, és a **beállításaid (API kulcs,
+partnerlista, célmappa) megmaradnak** — semmit nem kell újra beállítani. Ha lefutott,
+zárd be a kis ablakot, és indítsd a programot a szokásos módon (`inditas.bat`).
 
 ## Fontos tudnivalók
 
