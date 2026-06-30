@@ -22,11 +22,14 @@ sorolást.
   **Partner** mező, ha nincs kiválasztva partner; **sárgával** a **Munkaszám** mező, ha a
   munkaszám nem `M` + 3 számjegy alakú. A sor jobb szélén a **Teendő** oszlop megmondja, mi a
   gond (pl. „hiányzik a partner"). Ahogy kijavítod, a szín **azonnal eltűnik**, és a sor zöld
-  „rendben" jelzést kap. Lent a program kiírja, hány sor igényel még figyelmet.
+  „rendben" jelzést kap. Lent a program kiírja, hány sor igényel még figyelmet — **amikor
+  minden rendben, ez a szöveg zöldre vált**.
 - **„Új dokumentum" pipa:** ott legyen bepipálva, ahol tényleg új dokumentum kezdődik.
   Ha egy folytatólagos oldal sarkában véletlen folt/pecsét van, a gép tévesen új
   dokumentumnak hiheti — vedd ki a pipát. Ha egy első oldalon a felirat halvány és a gép
-  nem vette észre, tedd be a pipát.
+  nem vette észre, tedd be a pipát. **Partnert és munkaszámot csak a bepipált
+  (dokumentum-kezdő) sorokban lehet írni** — a többi sor mezője kiszürkül, hogy véletlenül
+  se írj rossz helyre.
 - **Partner:** kezdd el beírni a nevet, és a mező alatt **azonnal megjelennek a lehetséges
   partnerek** — elöl azok, amelyek a beírt betűkkel **kezdődnek**, alattuk azok, amelyek
   **tartalmazzák**. A megfelelőre kattints (vagy a Le nyíllal és Enterrel válaszd ki). Több
