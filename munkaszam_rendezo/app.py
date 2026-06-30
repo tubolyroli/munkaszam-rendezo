@@ -58,7 +58,13 @@ class PartnerMezo(ttk.Frame):
         # (összehasonlító kulcs, eredeti név) párok, egyszer kiszámolva
         self._kulcsok = [(partners._kulcs(p), p) for p in partnerek]
 
-        self.entry = tk.Entry(self, textvariable=valtozo, width=szelesseg)
+        self.entry = tk.Entry(
+            self,
+            textvariable=valtozo,
+            width=szelesseg,
+            disabledbackground="#e9ecef",  # kiszürkített (folytatás-oldal: nem szerkeszthető)
+            disabledforeground="#9aa0a6",
+        )
         self.entry.pack(fill="x")
         self._alap_szin = self.entry.cget("background")
 
@@ -173,6 +179,15 @@ class PartnerMezo(ttk.Frame):
         """Hiányzó partnernél pirosra színezi a mezőt, egyébként visszaállítja."""
         self.entry.config(background=PARTNER_HIANYZIK_SZIN if hianyzik else self._alap_szin)
 
+    def allit_allapot(self, aktiv: bool) -> None:
+        """Engedélyezi vagy letiltja (kiszürkíti) a mezőt. Folytatás-oldalon letiltjuk,
+        hogy ne lehessen véletlenül beleírni."""
+        if aktiv:
+            self.entry.config(state="normal")
+        else:
+            self._elrejt()  # ne maradjon nyitva a felugró lista
+            self.entry.config(state="disabled")
+
 
 class App:
     def __init__(self) -> None:
@@ -184,8 +199,18 @@ class App:
 
         self.gyoker = tk.Tk()
         self.gyoker.title("Munkaszám-rendező")
-        self.gyoker.geometry("900x650")
+        # Teljes méretben (maximalizálva) nyit, hogy a Teendő oszlop is rögtön látsszon.
+        # Windowson a 'zoomed' állapot maximalizál; máshol (pl. fejlesztés Macen) a képernyő
+        # méretére állítjuk.
+        self.gyoker.geometry("1100x700")
         self.gyoker.minsize(820, 520)
+        try:
+            self.gyoker.state("zoomed")
+        except tk.TclError:
+            self.gyoker.update_idletasks()
+            self.gyoker.geometry(
+                f"{self.gyoker.winfo_screenwidth()}x{self.gyoker.winfo_screenheight()}+0+0"
+            )
         # Ha bármelyik gomb hibába futna, ne csak a háttér-konzolba írjon (amit az
         # édesapa nem lát), hanem jelenjen meg érthető, fényképezhető üzenet.
         self.gyoker.report_callback_exception = self._kezeletlen_hiba
@@ -206,6 +231,9 @@ class App:
 
         ttk.Button(keret, text="Válassz PDF(ek)et", command=self._valassz_pdf).pack(side="left")
         ttk.Button(keret, text="Beállítások", command=self._beallitas_ablak).pack(side="left", padx=8)
+        ttk.Button(
+            keret, text="Használati útmutató", command=self._utmutato_megnyit
+        ).pack(side="left")
 
         self.allapot_szoveg = tk.StringVar(value="Készen áll.")
         ttk.Label(keret, textvariable=self.allapot_szoveg).pack(side="left", padx=12)
@@ -264,7 +292,8 @@ class App:
         )
         self.mentes_gomb.pack(side="right")
         self.teendo_szoveg = tk.StringVar(value="")
-        tk.Label(keret, textvariable=self.teendo_szoveg, fg="#a06000").pack(side="left")
+        self.also_teendo_cimke = tk.Label(keret, textvariable=self.teendo_szoveg, fg="#a06000")
+        self.also_teendo_cimke.pack(side="left")
 
     # ------------------------------------------------------------- első indítás
     def _elso_inditas_ellenorzes(self) -> None:
@@ -422,7 +451,13 @@ class App:
             partner_mezo.grid(row=0, column=3, sticky="w", padx=2)
 
             munka_valt = tk.StringVar(value=adat["munkaszam"])
-            munka_mezo = tk.Entry(sor, textvariable=munka_valt, width=14)
+            munka_mezo = tk.Entry(
+                sor,
+                textvariable=munka_valt,
+                width=14,
+                disabledbackground="#e9ecef",  # kiszürkített, ha nem dokumentum-kezdő sor
+                disabledforeground="#9aa0a6",
+            )
             munka_mezo.grid(row=0, column=4, sticky="w", padx=2)
 
             # nincs fix szélesség: a (néha hosszabb) teendő-szöveg teljesen kiférjen
@@ -463,12 +498,15 @@ class App:
         for w in self.sor_widgetek:
             kezdo = bool(w["uj"].get()) or not volt_mar_sor
             volt_mar_sor = True
-            if not kezdo:  # folytatás-oldal: nincs saját teendője
-                w["munka_mezo"].config(background=w["munka_alap_hatter"])
-                w["partner_mezo"].jelold_hianyt(False)
+            if not kezdo:  # folytatás-oldal: a mezők kiszürkítve, nem szerkeszthetők
+                w["munka_mezo"].config(state="disabled")
+                w["partner_mezo"].allit_allapot(False)
                 w["teendo_cimke"].config(text="", background=w["teendo_alap_hatter"])
                 continue
 
+            # dokumentum-kezdő sor: a partner és a munkaszám mező szerkeszthető
+            w["munka_mezo"].config(state="normal")
+            w["partner_mezo"].allit_allapot(True)
             partner_hianyzik = not w["partner"].get().strip()
             w["partner_mezo"].jelold_hianyt(partner_hianyzik)
             nyers_munkaszam = w["munkaszam"].get().strip()
@@ -505,10 +543,12 @@ class App:
 
         if figyelmet_igenyel:
             self.teendo_szoveg.set(
-                f"{figyelmet_igenyel} sor igényel figyelmet (sárgával jelölve)."
+                f"{figyelmet_igenyel} sor igényel figyelmet (sárgával/pirossal jelölve)."
             )
+            self.also_teendo_cimke.config(fg="#a06000")  # narancs: még van teendő
         else:
             self.teendo_szoveg.set("Minden sor rendben, mehet a mentés.")
+            self.also_teendo_cimke.config(fg="#2e7d32")  # zöld: minden rendben
 
     # ------------------------------------------------------------- mentés
     def _ment(self) -> None:
@@ -631,17 +671,38 @@ class App:
         self.teendo_szoveg.set("")
         self.allapot_szoveg.set("Készen áll. Válassz új PDF-(ek)et.")
 
+    def _rendszerrel_megnyit(self, ut: str) -> None:
+        """A megadott fájlt vagy mappát a rendszer alapértelmezett alkalmazásával nyitja meg
+        (Windowson Intéző / PDF-néző, macOS-en open, Linuxon xdg-open)."""
+        if sys.platform.startswith("win"):
+            os.startfile(ut)  # type: ignore[attr-defined]
+        elif sys.platform == "darwin":
+            subprocess.run(["open", ut], check=False)
+        else:
+            subprocess.run(["xdg-open", ut], check=False)
+
     def _mappa_megnyit(self, mappa: str) -> None:
         """Megnyitja a megadott mappát a rendszer fájlkezelőjében (Windowson az Intézőben)."""
         try:
-            if sys.platform.startswith("win"):
-                os.startfile(mappa)  # type: ignore[attr-defined]
-            elif sys.platform == "darwin":
-                subprocess.run(["open", mappa], check=False)
-            else:
-                subprocess.run(["xdg-open", mappa], check=False)
+            self._rendszerrel_megnyit(mappa)
         except Exception as hiba:  # noqa: BLE001
             messagebox.showerror("Hiba", f"Nem sikerült megnyitni a mappát.\n\n{hiba}")
+
+    def _utmutato_megnyit(self) -> None:
+        """Megnyitja a használati útmutató PDF-et a rendszer alapértelmezett PDF-nézőjében."""
+        # A PDF a repo gyökerében, az output/ mappában van (app.py a csomagban → két szint fel).
+        pdf = Path(__file__).resolve().parent.parent / "output" / "Hasznalati_utmutato.pdf"
+        if not pdf.exists():
+            messagebox.showerror(
+                "Útmutató", f"A használati útmutató nem található itt:\n{pdf}"
+            )
+            return
+        try:
+            self._rendszerrel_megnyit(str(pdf))
+        except Exception as hiba:  # noqa: BLE001
+            messagebox.showerror(
+                "Útmutató", f"Nem sikerült megnyitni a használati útmutatót.\n\n{hiba}"
+            )
 
     def _kezeletlen_hiba(self, kivetel_tipus, kivetel, nyomkoveto) -> None:
         """Bármilyen váratlan hiba esetén érthető, fényképezhető üzenetet mutat.
