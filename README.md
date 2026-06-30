@@ -37,7 +37,15 @@ munkaszam-rendezo/
 
 ## Frissítés
 
-`indito\frissites.bat` (git pull + függőségek; a `config.json` megmarad).
+Az **`indito\inditas.bat`** (= az asztali ikon) **induláskor magától frissít**: csendben
+`git pull --ff-only`, és csak akkor futtat `pip install`-t, ha a `requirements.txt` változott.
+Ha nincs internet vagy a pull nem fast-forward, a program a meglévő verzióval indul (best
+effort). A `config.json` mindig megmarad.
+
+Kézi/erőltetett frissítés: **`indito\frissites.bat`** (git pull + `pip install`).
+
+> Ezért az `inditas.bat`-ot lehetőleg **ne** változtasd jövőbeli commitban — mivel önmagát is
+> frissítheti, egy futó `.bat` átírása megzavarhatja a `cmd`-t.
 
 ## Fejlesztés
 
