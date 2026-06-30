@@ -19,5 +19,10 @@ data/
 __pycache__/
 *.pyc
 
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
 # macOS
 .DS_Store
