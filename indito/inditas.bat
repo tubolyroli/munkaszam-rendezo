@@ -1,7 +1,8 @@
 @echo off
 chcp 65001 >nul
 rem A Munkaszám-rendező elindítása. Erre a fájlra kell duplán kattintani.
-cd /d "%~dp0"
+rem Ez a fájl az indito\ mappában van; a program gyökere egy szinttel feljebb.
+cd /d "%~dp0.."
 python -m munkaszam_rendezo
 if errorlevel 1 (
   echo.

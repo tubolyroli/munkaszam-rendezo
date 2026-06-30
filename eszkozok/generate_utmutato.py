@@ -4,7 +4,7 @@ A PDF helyes magyar ékezetekkel (ő, ű is) készül egy Unicode TTF betűtípu
 Az útmutató Markdown-részhalmazát közvetlenül, soronként rendereljük (nem HTML-en át),
 hogy a tördelés rendben legyen (ne kerüljenek listaelemek külön, üres oldalakra).
 
-Futtatás:  python generate_utmutato.py
+Futtatás:  python eszkozok/generate_utmutato.py
 Eredmény:  output/Hasznalati_utmutato.pdf
 """
 
@@ -16,7 +16,8 @@ from pathlib import Path
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
-GYOKER = Path(__file__).resolve().parent
+# Ez a fájl az eszkozok\ mappában van; a repo gyökere egy szinttel feljebb.
+GYOKER = Path(__file__).resolve().parent.parent
 FORRAS = GYOKER / "docs" / "Hasznalati_utmutato.md"
 KIMENET = GYOKER / "output" / "Hasznalati_utmutato.pdf"
 

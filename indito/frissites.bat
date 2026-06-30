@@ -6,8 +6,10 @@ rem  Erre a fájlra kell duplán kattintani, ha új verzió érkezett.
 rem
 rem  A helyi beallitasok (config.json — API kulcs, partnerek, célmappa) NEM
 rem  irodnak felul, azok megmaradnak.
+rem
+rem  Ez a fajl az indito\ mappaban van; a repo gyokere egy szinttel feljebb.
 rem ============================================================================
-cd /d "%~dp0"
+cd /d "%~dp0.."
 
 where git >nul 2>nul
 if errorlevel 1 (
