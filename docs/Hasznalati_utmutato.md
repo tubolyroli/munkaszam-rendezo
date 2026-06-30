@@ -138,10 +138,13 @@ Célmappa/
 
 ## Frissítés (ha új verzió érkezik)
 
-Ha a fiad javít vagy fejleszt a programon, nagyon egyszerű frissíteni: kattints duplán a
-`frissites.bat` fájlra. Letölti a legújabb verziót, és a **beállításaid (API kulcs,
-partnerlista, célmappa) megmaradnak** — semmit nem kell újra beállítani. Ha lefutott,
-zárd be a kis ablakot, és indítsd a programot a szokásos módon (`inditas.bat`).
+Általában **nincs vele dolgod**: amikor elindítod a programot (az asztali ikonnal), az
+**magától ellenőrzi és letölti a legújabb verziót**, ha van internet és új verzió érhető el.
+A **beállításaid (API kulcs, partnerlista, célmappa) megmaradnak** — semmit nem kell újra
+beállítani.
+
+Ha valamiért külön szeretnéd frissíteni (pl. nem volt internet indításkor), kattints duplán
+a `frissites.bat` fájlra, majd indítsd a programot a szokásos módon.
 
 ## Fontos tudnivalók
 
