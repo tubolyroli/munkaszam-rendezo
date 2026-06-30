@@ -1,7 +1,7 @@
 """Munkaszám értelmezése és a mappa-/fájlnevek képzése.
 
-A munkaszám alakja ``M`` + szám, utána (általában) egy ``/`` és egy kétjegyű év,
-pl. ``M123/26``. Az ügyintéző a papírra úgyis ráírja az évet (a fizikai tárolás miatt),
+A munkaszám alakja ``M`` + PONTOSAN három számjegy, utána (általában) egy ``/`` és egy
+kétjegyű év, pl. ``M123/26``. Az ügyintéző a papírra úgyis ráírja az évet (a fizikai tárolás miatt),
 ezért a LEÍRT ÉV az igazodási pont: ha szerepel, azt használjuk (így a digitális mappa
 egyezik a papíros tárolással). Ha az évet nem írta oda, akkor egy tartalék évet kapunk
 kívülről (a beállításból: alapértelmezett év, vagy ha az üres, a gép órája szerinti aktuális
@@ -16,9 +16,11 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
-# M (kis/nagy) + szám, majd OPCIONÁLISAN egy elválasztó (/, -, _ vagy szóköz) és kétjegyű év.
-# Ha az év szerepel, azt használjuk; ha nincs, a kívülről kapott tartalék évet.
-_MUNKASZAM_RE = re.compile(r"^\s*[Mm]\s*(\d+)(?:\s*[/\-_ ]\s*(\d{2}))?")
+# M (kis/nagy) + PONTOSAN 3 számjegy, majd OPCIONÁLISAN egy elválasztó (/, -, _ vagy szóköz)
+# és kétjegyű év. Ha az év szerepel, azt használjuk; ha nincs, a kívülről kapott tartalék évet.
+# A TELJES szöveget illesztjük (^…$), hogy a 3-nál több (vagy kevesebb) jegyű szám — pl. egy
+# beolvasási hiba miatti M1248 — NE csússzon át érvényesként (a vége levágásával M124-re).
+_MUNKASZAM_RE = re.compile(r"^\s*[Mm]\s*(\d{3})(?:\s*[/\-_ ]\s*(\d{2}))?\s*$")
 
 # Windowson tiltott karakterek fájl- és mappanevekben.
 _TILTOTT_KARAKTEREK = r'<>:"/\|?*'

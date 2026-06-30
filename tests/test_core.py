@@ -30,15 +30,20 @@ def test_munkaszam_ertelmezes() -> None:
     # leírt év nyer akkor is, ha az nem az aktuális (pl. egy 2025-ös munka)
     assert munka.ertelmez_munkaszam("M124/25", "26").mappa_nev == "M124_25"
     # ha NINCS leírva év -> a tartalék évet használja
-    assert munka.ertelmez_munkaszam("M7", "26").mappa_nev == "M7_26"
+    assert munka.ertelmez_munkaszam("M070", "26").mappa_nev == "M070_26"
     # rugalmas elválasztó a leírt évhez
-    assert munka.ertelmez_munkaszam("M 45 - 26", "99").mappa_nev == "M45_26"
+    assert munka.ertelmez_munkaszam("M 045 - 26", "99").mappa_nev == "M045_26"
     # vezető nulla megmarad
     assert munka.ertelmez_munkaszam("M007/26", "26").mappa_nev == "M007_26"
     # hibás alakok (nincs M + szám)
     assert munka.ertelmez_munkaszam("123/26", "26") is None
     assert munka.ertelmez_munkaszam("", "26") is None
     assert munka.ertelmez_munkaszam(None, "26") is None
+    # PONTOSAN 3 számjegy kell: a 4 jegyű (pl. beolvasási hibás) és a 2 jegyű is hibás,
+    # és NEM csonkul érvényessé (a 'M1248' nem lesz 'M124')
+    assert munka.ertelmez_munkaszam("M1248/26", "26") is None
+    assert munka.ertelmez_munkaszam("M12/26", "26") is None
+    assert munka.ertelmez_munkaszam("M1234", "26") is None
 
 
 def test_biztonsagos_mappanev() -> None:
@@ -110,7 +115,7 @@ def test_filer_mentes_es_sorszamozas() -> None:
         forras_meret = forras_ut.stat().st_size
 
         cel = tmp / "rendezett"
-        m = munka.ertelmez_munkaszam("M9/24", "24")
+        m = munka.ertelmez_munkaszam("M009/24", "24")
         feladatok = [
             filer.MentesiFeladat("Kovács Bt.", m, [(str(forras_ut), 0), (str(forras_ut), 1)]),
             filer.MentesiFeladat("Kovács Bt.", m, [(str(forras_ut), 2)]),  # ugyanaz a munkaszám
@@ -118,16 +123,16 @@ def test_filer_mentes_es_sorszamozas() -> None:
         eredmenyek = filer.ment(feladatok, cel)
         assert len(eredmenyek) == 2
 
-        mappa = cel / "Kovács Bt" / "2024" / "M9_24"
-        assert (mappa / "M9_24_001.pdf").exists()
-        assert (mappa / "M9_24_002.pdf").exists()
+        mappa = cel / "Kovács Bt" / "2024" / "M009_24"
+        assert (mappa / "M009_24_001.pdf").exists()
+        assert (mappa / "M009_24_002.pdf").exists()
         # az első dokumentum 2 oldalas, a második 1
-        assert fitz.open(str(mappa / "M9_24_001.pdf")).page_count == 2
-        assert fitz.open(str(mappa / "M9_24_002.pdf")).page_count == 1
+        assert fitz.open(str(mappa / "M009_24_001.pdf")).page_count == 2
+        assert fitz.open(str(mappa / "M009_24_002.pdf")).page_count == 1
 
         # újabb mentés -> a sorszám folytatódik, nem ír felül
         filer.ment([filer.MentesiFeladat("Kovács Bt.", m, [(str(forras_ut), 3)])], cel)
-        assert (mappa / "M9_24_003.pdf").exists()
+        assert (mappa / "M009_24_003.pdf").exists()
 
         # a forrás PDF érintetlen
         assert forras_ut.stat().st_size == forras_meret

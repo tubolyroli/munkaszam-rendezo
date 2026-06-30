@@ -19,7 +19,7 @@ a táblázatot** — ez a legfontosabb lépés. Pár perc ellenőrzés megelőzi
 sorolást.
 
 - **Sárga sorok:** ezeknél valami **hiányzik** — vagy nincs kiválasztva a partner, vagy a
-  munkaszám nem `M` + szám alakú. A sor jobb szélén a **Teendő** oszlop megmondja, mi a gond
+  munkaszám nem `M` + 3 számjegy alakú. A sor jobb szélén a **Teendő** oszlop megmondja, mi a gond
   (pl. „hiányzik: partner"). Ahogy kijavítod, a sárga **azonnal eltűnik**, és a sor zöld
   „rendben" jelzést kap. Lent a program kiírja, hány sor igényel még figyelmet.
 - **„Új dokumentum" pipa:** ott legyen bepipálva, ahol tényleg új dokumentum kezdődik.
@@ -39,7 +39,8 @@ mert akkor kétszer menti el.
 
 - A partner nevét és a munkaszámot **csak a dokumentum első oldalára** írd, a jobb
   felső sarokba. A többi oldal (2., 3. …) sarka maradjon üres.
-- A munkaszám alakja: `M`, utána a szám, majd az év. Például: `M123/26`.
+- A munkaszám alakja: `M`, utána **pontosan három számjegy**, majd az év. Például: `M123/26`.
+  (Ha kell, vezető nullával egészítsd ki, pl. `M007`.)
 - A **leírt évet a program is felhasználja**, így a digitális mappa egyezik a papíros
   tárolással. Ha valamiért nem írsz oda évet (csak `M123`), akkor a program az **aktuális
   évet** veszi (most 2026), és ez magától követi a jövő éveket (2027, 2028 …) is.
@@ -83,7 +84,7 @@ mert akkor kétszer menti el.
    - **Partner** — válaszd a listából. **Új partnert** úgy adsz hozzá, hogy egyszerűen
      **beírod a nevét** ebbe a mezőbe (nem kell előre felvenni) — mentéskor a program
      automatikusan megjegyzi a következő alkalomra;
-   - **Munkaszám** — ellenőrizd, hogy jó-e (`M` + szám, pl. `M123`);
+   - **Munkaszám** — ellenőrizd, hogy jó-e (`M` + 3 számjegy, pl. `M123`);
    - **Teendő** — a sor jobb szélén jelzi, ha valami hiányzik.
    - A **sárgával jelölt sorok** hiányosak (nincs partner, vagy rossz a munkaszám) — ezeket
      javítsd. Ahogy kijavítod, a sárga eltűnik.
@@ -118,7 +119,7 @@ Célmappa/
 
 - **"Hiányzik a partner" vagy "hibás munkaszám" üzenet a mentésnél:** a program
   megmondja, melyik dokumentumnál. Javítsd a táblázatban (partner kiválasztása vagy a
-  munkaszám `M` + szám alakra javítása, pl. `M123`), majd mentsd újra.
+  munkaszám `M` + 3 számjegy alakra javítása, pl. `M123`), majd mentsd újra.
 - **"Hiba a beolvasás közben":** általában az internet vagy az API kulcs a gond.
   Ellenőrizd az internetkapcsolatot, és a kulcsot a Beállításokban.
 - **"Váratlan hiba" ablak:** ha valami nem várt hiba történik, a program egy üzenetben

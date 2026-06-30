@@ -74,7 +74,7 @@ class App:
 
         tipp = (
             "Tipp: a sárgával jelölt sorok igényelnek figyelmet. Új partnert egyszerűen "
-            "beírhatsz a Partner mezőbe — mentéskor megjegyzem a következő alkalomra."
+            "beírhatsz a Partner mezőbe — következő futtatáskor már kiválasztható lesz."
         )
         ttk.Label(keret, text=tipp, foreground="#555555", wraplength=860, justify="left").pack(
             anchor="w", pady=(6, 4)
@@ -283,7 +283,9 @@ class App:
                     "partner": partner_valt,
                     "munkaszam": munka_valt,
                     "munka_mezo": munka_mezo,
+                    "munka_alap_hatter": munka_mezo.cget("background"),
                     "teendo_cimke": teendo_cimke,
+                    "teendo_alap_hatter": teendo_cimke.cget("background"),
                 }
             )
 
@@ -306,26 +308,42 @@ class App:
             kezdo = bool(w["uj"].get()) or not volt_mar_sor
             volt_mar_sor = True
             if not kezdo:  # folytatás-oldal: nincs saját teendője
-                w["munka_mezo"].config(background="white")
-                w["teendo_cimke"].config(text="")
+                w["munka_mezo"].config(background=w["munka_alap_hatter"])
+                w["teendo_cimke"].config(text="", background=w["teendo_alap_hatter"])
                 continue
 
-            hianyok = []
-            if not w["partner"].get().strip():
-                hianyok.append("partner")
-            ervenyes_munkaszam = munka.ertelmez_munkaszam(
-                w["munkaszam"].get().strip(), self.beallitasok.tartalek_ev
+            partner_hianyzik = not w["partner"].get().strip()
+            nyers_munkaszam = w["munkaszam"].get().strip()
+            munkaszam_hibas = (
+                munka.ertelmez_munkaszam(nyers_munkaszam, self.beallitasok.tartalek_ev) is None
             )
-            if ervenyes_munkaszam is None:
-                hianyok.append("munkaszám")
 
-            if hianyok:
+            uzenetek = []
+            if partner_hianyzik:
+                uzenetek.append("hiányzik a partner")
+            if not nyers_munkaszam:
+                uzenetek.append("hiányzik a munkaszám")
+            elif munkaszam_hibas:
+                # van beírva valami, de nem M + 3 számjegy alakú (pl. egy beolvasási hibás M1248)
+                uzenetek.append("hibás munkaszám (M### kell)")
+
+            # A munkaszám-mezőt CSAK akkor emeljük ki sárgával, ha tényleg a munkaszámmal
+            # van baj — különben félrevezető (a sárga a hibás mezőre mutasson).
+            w["munka_mezo"].config(
+                background=ALACSONY_SZIN if munkaszam_hibas else w["munka_alap_hatter"]
+            )
+
+            if uzenetek:
                 figyelmet_igenyel += 1
-                w["munka_mezo"].config(background=ALACSONY_SZIN)
-                w["teendo_cimke"].config(text="⚠ hiányzik: " + ", ".join(hianyok), fg="#a06000")
+                w["teendo_cimke"].config(
+                    text="⚠ " + ", ".join(uzenetek),
+                    fg="#a06000",
+                    background=ALACSONY_SZIN,
+                )
             else:
-                w["munka_mezo"].config(background="white")
-                w["teendo_cimke"].config(text="✓ rendben", fg="#2e7d32")
+                w["teendo_cimke"].config(
+                    text="✓ rendben", fg="#2e7d32", background=w["teendo_alap_hatter"]
+                )
 
         if figyelmet_igenyel:
             self.teendo_szoveg.set(
@@ -354,14 +372,15 @@ class App:
 
         for sorszam, dok in enumerate(dokumentumok, start=1):
             elso = dok.oldalak[0]
+            cimke = f"{Path(elso.forras_pdf).name} / {elso.oldal_index + 1}. oldal"
             partner = (dok.partner or "").strip()
             munkaszam = munka.ertelmez_munkaszam(dok.munkaszam, self.beallitasok.tartalek_ev)
             if not partner:
-                hibak.append(f"{sorszam}. dokumentum ({elso.oldal_cimke}): hiányzik a partner.")
+                hibak.append(f"{sorszam}. dokumentum ({cimke}): hiányzik a partner.")
                 continue
             if munkaszam is None:
                 hibak.append(
-                    f"{sorszam}. dokumentum ({elso.oldal_cimke}): "
+                    f"{sorszam}. dokumentum ({cimke}): "
                     f"hibás vagy hiányzó munkaszám ('{dok.munkaszam}'). Helyes alak: M### (pl. M123)."
                 )
                 continue
