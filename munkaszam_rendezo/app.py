@@ -27,7 +27,8 @@ import fitz  # PyMuPDF
 from . import config as config_modul
 from . import corner, filer, grouping, munka, partners, partnerek_import, reader
 
-ALACSONY_SZIN = "#fff3cd"  # halvány sárga: bizonytalan beolvasás kiemelése
+ALACSONY_SZIN = "#fff3cd"  # halvány sárga: figyelmet igénylő munkaszám-mező
+PARTNER_HIANYZIK_SZIN = "#ffb3b3"  # piros: hiányzó (még kiválasztandó) partner
 
 # A táblázat oszlopai: (fejléc, fix szélesség képpontban). A fejléc ÉS a sorok ugyanezt a
 # fix szélességet használják (grid + columnconfigure minsize), így a fejléc mindig pontosan
@@ -40,6 +41,137 @@ OSZLOPOK = (
     ("Munkaszám", 110),
     ("Teendő", 320),
 )
+
+
+class PartnerMezo(ttk.Frame):
+    """Partner beviteli mező automatikus kiegészítéssel.
+
+    Egy ``tk.Entry`` (megbízhatóan színezhető: hiányzó partnernél piros) és egy alatta
+    felugró lista. Gépelés közben AZONNAL megjelennek a lehetséges partnerek, ebben a
+    sorrendben: előbb azok, amelyek a beírt szöveggel KEZDŐDNEK, alattuk azok, amelyek
+    csak TARTALMAZZÁK. Ékezet- és kisbetű-érzéketlen. Ha a beírt név egyikre sem illik,
+    nincs felugró lista — marad amit beírt, és mentéskor új partnerként megjegyezzük."""
+
+    def __init__(self, szulo, valtozo: tk.StringVar, partnerek: list[str], szelesseg: int = 28):
+        super().__init__(szulo)
+        self.valtozo = valtozo
+        # (összehasonlító kulcs, eredeti név) párok, egyszer kiszámolva
+        self._kulcsok = [(partners._kulcs(p), p) for p in partnerek]
+
+        self.entry = tk.Entry(self, textvariable=valtozo, width=szelesseg)
+        self.entry.pack(fill="x")
+        self._alap_szin = self.entry.cget("background")
+
+        self._popup: tk.Toplevel | None = None
+        self._lista: tk.Listbox | None = None
+
+        self.entry.bind("<KeyRelease>", self._gepeles)
+        self.entry.bind("<Down>", self._listara)
+        self.entry.bind("<Return>", self._valaszt)
+        self.entry.bind("<Escape>", lambda e: self._elrejt())
+        self.entry.bind("<FocusOut>", self._focus_out)
+
+    def _talalatok(self, szoveg: str) -> list[str]:
+        """Rangsorolt találatok: előbb a 'kezdődik vele', utána a 'tartalmazza'."""
+        kulcs = partners._kulcs(szoveg)
+        if not kulcs:
+            return []
+        kezdo, tartalmazo = [], []
+        for k, eredeti in self._kulcsok:
+            if k.startswith(kulcs):
+                kezdo.append(eredeti)
+            elif kulcs in k:
+                tartalmazo.append(eredeti)
+        kezdo.sort(key=str.lower)
+        tartalmazo.sort(key=str.lower)
+        return kezdo + tartalmazo
+
+    def _gepeles(self, event) -> None:
+        if event.keysym in ("Up", "Down", "Return", "Escape", "Tab", "Left", "Right"):
+            return
+        szoveg = self.valtozo.get().strip()
+        talalatok = self._talalatok(szoveg) if szoveg else []
+        if talalatok:
+            self._mutat(talalatok)
+        else:
+            self._elrejt()
+
+    def _mutat(self, talalatok: list[str]) -> None:
+        if self._popup is None:
+            self._popup = tk.Toplevel(self)
+            self._popup.wm_overrideredirect(True)  # keret nélküli felugró lista
+            self._lista = tk.Listbox(self._popup, activestyle="none", exportselection=False)
+            self._lista.pack(fill="both", expand=True)
+            self._lista.bind("<ButtonRelease-1>", self._valaszt_klikk)
+            self._lista.bind("<Return>", self._valaszt)
+            self._lista.bind("<Escape>", lambda e: (self._elrejt(), self.entry.focus_set()))
+            self._lista.bind("<MouseWheel>", self._lista_gorgo)
+        self._lista.delete(0, "end")
+        for nev in talalatok:
+            self._lista.insert("end", nev)
+        self._lista.configure(height=min(8, len(talalatok)))
+        self.update_idletasks()
+        x = self.entry.winfo_rootx()
+        y = self.entry.winfo_rooty() + self.entry.winfo_height()
+        sz = max(self.entry.winfo_width(), 220)
+        self._popup.wm_geometry(f"{sz}x{self._lista.winfo_reqheight()}+{x}+{y}")
+        self._popup.deiconify()
+        self._popup.lift()
+
+    def _listara(self, event):
+        """Le nyíl: belép a felugró listába, hogy nyilakkal lehessen választani."""
+        if self._popup is not None and self._lista is not None and self._lista.size():
+            self._lista.focus_set()
+            self._lista.selection_clear(0, "end")
+            self._lista.selection_set(0)
+            self._lista.activate(0)
+        return "break"
+
+    def _valaszt(self, event=None):
+        if self._lista is not None:
+            sel = self._lista.curselection()
+            if sel:
+                self.valtozo.set(self._lista.get(sel[0]))
+        self._elrejt()
+        self.entry.focus_set()
+        self.entry.icursor("end")
+        return "break"
+
+    def _valaszt_klikk(self, event):
+        if self._lista is not None:
+            idx = self._lista.nearest(event.y)
+            if idx >= 0:
+                self.valtozo.set(self._lista.get(idx))
+        self._elrejt()
+        self.entry.focus_set()
+        self.entry.icursor("end")
+        return "break"
+
+    def _lista_gorgo(self, event):
+        if self._lista is not None and event.delta:
+            self._lista.yview_scroll(-1 if event.delta > 0 else 1, "units")
+        return "break"  # ne görgesse a mögötte lévő táblázatot is
+
+    def _focus_out(self, event):
+        # késleltetett elrejtés: ha a fókusz épp a felugró listára került (Le nyíl vagy
+        # kattintás), NE rejtsük el — minden más esetben (másik mezőre lép) igen.
+        def talan_elrejt():
+            try:
+                fok = self.focus_get()
+            except KeyError:
+                fok = None
+            if fok is not self._lista:
+                self._elrejt()
+
+        self.after(120, talan_elrejt)
+
+    def _elrejt(self):
+        if self._popup is not None:
+            self._popup.withdraw()
+
+    def jelold_hianyt(self, hianyzik: bool) -> None:
+        """Hiányzó partnernél pirosra színezi a mezőt, egyébként visszaállítja."""
+        self.entry.config(background=PARTNER_HIANYZIK_SZIN if hianyzik else self._alap_szin)
 
 
 class App:
@@ -286,16 +418,8 @@ class App:
             ttk.Checkbutton(sor, variable=uj_valt).grid(row=0, column=2, sticky="w", padx=2)
 
             partner_valt = tk.StringVar(value=adat["partner"])
-            ertekek = partner_lista
-            if adat["partner"] and adat["partner"] not in ertekek:
-                ertekek = [adat["partner"], *partner_lista]
-            partner_mezo = ttk.Combobox(sor, textvariable=partner_valt, values=ertekek, width=28)
+            partner_mezo = PartnerMezo(sor, partner_valt, partner_lista, szelesseg=28)
             partner_mezo.grid(row=0, column=3, sticky="w", padx=2)
-            # gépeléskor szűkítjük a legördülő választékát a beírt szövegre (1002 név között)
-            partner_mezo.bind(
-                "<KeyRelease>",
-                lambda e, combo=partner_mezo: self._partner_szures(e, combo, partner_lista),
-            )
 
             munka_valt = tk.StringVar(value=adat["munkaszam"])
             munka_mezo = tk.Entry(sor, textvariable=munka_valt, width=14)
@@ -312,6 +436,7 @@ class App:
                     "oldal_cimke": adat["oldal_cimke"],
                     "uj": uj_valt,
                     "partner": partner_valt,
+                    "partner_mezo": partner_mezo,
                     "munkaszam": munka_valt,
                     "munka_mezo": munka_mezo,
                     "munka_alap_hatter": munka_mezo.cget("background"),
@@ -325,21 +450,6 @@ class App:
                 valt.trace_add("write", lambda *_: self._frissit_kiemelesek())
 
         self._frissit_kiemelesek()
-
-    def _partner_szures(self, event, combo: ttk.Combobox, teljes: list[str]) -> None:
-        """Gépelés közben a partner-legördülő választékát a beírt szövegre szűkíti.
-
-        Ékezet- és kisbetű-érzéketlen (a ``partners._kulcs`` szerint), tartalmazás alapján.
-        Ha a beírt név egyik ismert partnerre sem illik, marad amit beírt — mentéskor
-        ÚJ partnerként megjegyezzük. A navigációs/választó billentyűkbe nem szólunk bele."""
-        if event.keysym in ("Up", "Down", "Return", "Escape", "Tab", "Left", "Right"):
-            return
-        szoveg = combo.get().strip()
-        if not szoveg:
-            combo["values"] = teljes
-            return
-        kulcs = partners._kulcs(szoveg)
-        combo["values"] = [p for p in teljes if kulcs in partners._kulcs(p)]
 
     def _frissit_kiemelesek(self) -> None:
         """A figyelmet igénylő sorokat kiemeli (sárga munkaszám-mező + rövid teendő-szöveg).
@@ -355,10 +465,12 @@ class App:
             volt_mar_sor = True
             if not kezdo:  # folytatás-oldal: nincs saját teendője
                 w["munka_mezo"].config(background=w["munka_alap_hatter"])
+                w["partner_mezo"].jelold_hianyt(False)
                 w["teendo_cimke"].config(text="", background=w["teendo_alap_hatter"])
                 continue
 
             partner_hianyzik = not w["partner"].get().strip()
+            w["partner_mezo"].jelold_hianyt(partner_hianyzik)
             nyers_munkaszam = w["munkaszam"].get().strip()
             munkaszam_hibas = (
                 munka.ertelmez_munkaszam(nyers_munkaszam, self.beallitasok.tartalek_ev) is None

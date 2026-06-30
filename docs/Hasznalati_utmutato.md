@@ -18,16 +18,19 @@ A program a kézírást olvassa be, és ez néha téveszt. Ezért **mentés elő
 a táblázatot** — ez a legfontosabb lépés. Pár perc ellenőrzés megelőzi a rossz helyre
 sorolást.
 
-- **Sárga sorok:** ezeknél valami **hiányzik** — vagy nincs kiválasztva a partner, vagy a
-  munkaszám nem `M` + 3 számjegy alakú. A sor jobb szélén a **Teendő** oszlop megmondja, mi a gond
-  (pl. „hiányzik: partner"). Ahogy kijavítod, a sárga **azonnal eltűnik**, és a sor zöld
+- **Hiányzó adatok:** ha valami hiányzik, a hibás mező kiszíneződik. **Pirossal** a
+  **Partner** mező, ha nincs kiválasztva partner; **sárgával** a **Munkaszám** mező, ha a
+  munkaszám nem `M` + 3 számjegy alakú. A sor jobb szélén a **Teendő** oszlop megmondja, mi a
+  gond (pl. „hiányzik a partner"). Ahogy kijavítod, a szín **azonnal eltűnik**, és a sor zöld
   „rendben" jelzést kap. Lent a program kiírja, hány sor igényel még figyelmet.
 - **„Új dokumentum" pipa:** ott legyen bepipálva, ahol tényleg új dokumentum kezdődik.
   Ha egy folytatólagos oldal sarkában véletlen folt/pecsét van, a gép tévesen új
   dokumentumnak hiheti — vedd ki a pipát. Ha egy első oldalon a felirat halvány és a gép
   nem vette észre, tedd be a pipát.
-- **Partner:** a legördülőből a helyeset válaszd. Több hasonló nevű is lehet
-  (pl. több „Profilaxis"), ezért nézd meg, tényleg a jó-e.
+- **Partner:** kezdd el beírni a nevet, és a mező alatt **azonnal megjelennek a lehetséges
+  partnerek** — elöl azok, amelyek a beírt betűkkel **kezdődnek**, alattuk azok, amelyek
+  **tartalmazzák**. A megfelelőre kattints (vagy a Le nyíllal és Enterrel válaszd ki). Több
+  hasonló nevű is lehet (pl. több „Profilaxis"), ezért nézd meg, tényleg a jó-e.
 - **Munkaszám és év:** ellenőrizd a számot és az évet.
 
 Nyugodtan javíts bármit a mentés előtt. És jó hír: a program **az eredeti fájlt nem
@@ -81,13 +84,15 @@ mert akkor kétszer menti el.
    - **kis képet** a sarokról (amit a gép beolvasott);
    - **"Új dokumentum"** pipát — ez azt jelzi, hogy itt **új dokumentum kezdődik**.
      Ha a gép tévedett, vedd ki vagy tedd be a pipát;
-   - **Partner** — válaszd a listából. **Új partnert** úgy adsz hozzá, hogy egyszerűen
-     **beírod a nevét** ebbe a mezőbe (nem kell előre felvenni) — mentéskor a program
-     automatikusan megjegyzi a következő alkalomra;
+   - **Partner** — kezdd el beírni a nevet, és a felugró listából válaszd ki a megfelelőt
+     (elöl a beírt betűkkel kezdődők, alattuk a tartalmazók). **Új partnert** úgy adsz hozzá,
+     hogy egyszerűen **beírod a teljes nevét** (nem kell előre felvenni, és nem kell a listából
+     választani) — mentéskor a program automatikusan megjegyzi a következő alkalomra;
    - **Munkaszám** — ellenőrizd, hogy jó-e (`M` + 3 számjegy, pl. `M123`);
    - **Teendő** — a sor jobb szélén jelzi, ha valami hiányzik.
-   - A **sárgával jelölt sorok** hiányosak (nincs partner, vagy rossz a munkaszám) — ezeket
-     javítsd. Ahogy kijavítod, a sárga eltűnik.
+   - A **kiszínezett mezők** hiányosak: **piros** Partner = nincs kiválasztva partner,
+     **sárga** Munkaszám = rossz a munkaszám alakja. Ezeket javítsd; ahogy kijavítod, a szín
+     eltűnik.
 6. **Mentés.** Ha mindent rendben találtál, kattints a "Dokumentumok mentése" gombra.
    A program a megfelelő mappákba teszi a fájlokat. Utána egy **ablak jelenik meg**, ami
    pontosan **felsorolja, mely fájlokat hova mentette**, és három gombot kínál:
