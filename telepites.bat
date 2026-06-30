@@ -6,6 +6,11 @@ cd /d "%~dp0"
 echo A szukseges csomagok telepitese folyamatban...
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+
 echo.
-echo Kesz. Ezt az ablakot most bezarhatod.
+echo Asztali parancsikon letrehozasa...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0parancsikon.ps1"
+
+echo.
+echo Kesz. Ezt az ablakot most bezarhatod. Az Asztalon ott a Munkaszam-rendezo ikon.
 pause
