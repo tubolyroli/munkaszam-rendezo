@@ -11,6 +11,7 @@ Folyamat:
 from __future__ import annotations
 
 import base64
+import math
 import os
 import queue
 import subprocess
@@ -27,6 +28,18 @@ from . import config as config_modul
 from . import corner, filer, grouping, munka, partners, partnerek_import, reader
 
 ALACSONY_SZIN = "#fff3cd"  # halvány sárga: bizonytalan beolvasás kiemelése
+
+# A táblázat oszlopai: (fejléc, fix szélesség képpontban). A fejléc ÉS a sorok ugyanezt a
+# fix szélességet használják (grid + columnconfigure minsize), így a fejléc mindig pontosan
+# a megfelelő oszlop fölött van, és a változó szélességű kis kép sem tolja el a többit.
+OSZLOPOK = (
+    ("Oldal", 70),
+    ("Sarok", 270),
+    ("Új dokumentum", 110),
+    ("Partner", 240),
+    ("Munkaszám", 110),
+    ("Teendő", 320),
+)
 
 
 class App:
@@ -80,21 +93,16 @@ class App:
             anchor="w", pady=(6, 4)
         )
 
-        # fejléc sor
+        # fejléc sor — grid + fix oszlopszélesség, hogy pontosan a sorok fölött legyen
         fejlec = ttk.Frame(keret)
         fejlec.pack(fill="x")
-        for szoveg, szelesseg in (
-            ("Oldal", 6),
-            ("Sarok", 26),
-            ("Új dokumentum", 14),
-            ("Partner", 28),
-            ("Munkaszám", 14),
-            ("Teendő", 22),
-        ):
-            ttk.Label(fejlec, text=szoveg, width=szelesseg, anchor="w").pack(side="left", padx=2)
+        for i, (szoveg, px) in enumerate(OSZLOPOK):
+            fejlec.columnconfigure(i, minsize=px)
+            ttk.Label(fejlec, text=szoveg, anchor="w").grid(row=0, column=i, sticky="w", padx=2)
 
         # görgethető terület a sorokhoz
         vaszon = tk.Canvas(keret, borderwidth=0, highlightthickness=0)
+        self.vaszon = vaszon
         gorgeto = ttk.Scrollbar(keret, orient="vertical", command=vaszon.yview)
         self.sorok_keret = ttk.Frame(vaszon)
         self.sorok_keret.bind(
@@ -104,6 +112,17 @@ class App:
         vaszon.configure(yscrollcommand=gorgeto.set)
         vaszon.pack(side="left", fill="both", expand=True)
         gorgeto.pack(side="right", fill="y")
+
+        # Egérgörgővel is lehessen görgetni (eddig csak a csúszkával ment). Windows/Mac:
+        # <MouseWheel>; Linux: Button-4/5. Egyetlen görgethető terület van, ezért bind_all.
+        vaszon.bind_all("<MouseWheel>", self._egergorgo)
+        vaszon.bind_all("<Button-4>", lambda e: vaszon.yview_scroll(-1, "units"))
+        vaszon.bind_all("<Button-5>", lambda e: vaszon.yview_scroll(1, "units"))
+
+    def _egergorgo(self, event) -> None:
+        """Egérgörgő -> a táblázat görgetése (Windowson event.delta a 120 többszöröse)."""
+        if event.delta:
+            self.vaszon.yview_scroll(-1 if event.delta > 0 else 1, "units")
 
     def _epit_lablec(self) -> None:
         keret = ttk.Frame(self.gyoker, padding=10)
@@ -241,38 +260,50 @@ class App:
         for adat in sorok:
             sor = ttk.Frame(self.sorok_keret)
             sor.pack(fill="x", pady=1)
+            for i, (_, px) in enumerate(OSZLOPOK):
+                sor.columnconfigure(i, minsize=px)
 
-            ttk.Label(sor, text=adat["oldal_cimke"], width=14, anchor="w").pack(side="left", padx=2)
+            # Oldal: csak az oldalszámot mutatjuk (a hosszú szkenner-fájlnév csak zavarna és
+            # széttolná az oszlopokat); a teljes azonosító a mentési hibaüzenetben szerepel.
+            ttk.Label(sor, text=f"{adat['oldal_index'] + 1}. oldal", anchor="w").grid(
+                row=0, column=0, sticky="w", padx=2
+            )
 
             # kis kép a sarokról
             try:
                 kep = tk.PhotoImage(data=adat["thumb_base64"])
-                # kicsinyítés, hogy elférjen egy sorban
-                osztó = max(1, kep.width() // 220)
-                if osztó > 1:
-                    kep = kep.subsample(osztó, osztó)
+                # felfelé kerekített osztó -> a szélesség garantáltan <= 250 képpont, így a
+                # kép sosem lóg túl az oszlopán (különben széttolná a fejléchez igazítást)
+                oszto = max(1, math.ceil(kep.width() / 250))
+                if oszto > 1:
+                    kep = kep.subsample(oszto, oszto)
                 self.kep_hivatkozasok.append(kep)
-                ttk.Label(sor, image=kep).pack(side="left", padx=2)
+                ttk.Label(sor, image=kep).grid(row=0, column=1, sticky="w", padx=2)
             except Exception:  # noqa: BLE001 — ha a kép nem jeleníthető, ne álljon le minden
-                ttk.Label(sor, text="(kép)", width=24).pack(side="left", padx=2)
+                ttk.Label(sor, text="(kép)").grid(row=0, column=1, sticky="w", padx=2)
 
             uj_valt = tk.BooleanVar(value=adat["uj_dokumentum"])
-            ttk.Checkbutton(sor, variable=uj_valt, width=12).pack(side="left", padx=2)
+            ttk.Checkbutton(sor, variable=uj_valt).grid(row=0, column=2, sticky="w", padx=2)
 
             partner_valt = tk.StringVar(value=adat["partner"])
             ertekek = partner_lista
             if adat["partner"] and adat["partner"] not in ertekek:
                 ertekek = [adat["partner"], *partner_lista]
-            ttk.Combobox(sor, textvariable=partner_valt, values=ertekek, width=26).pack(
-                side="left", padx=2
+            partner_mezo = ttk.Combobox(sor, textvariable=partner_valt, values=ertekek, width=28)
+            partner_mezo.grid(row=0, column=3, sticky="w", padx=2)
+            # gépeléskor szűkítjük a legördülő választékát a beírt szövegre (1002 név között)
+            partner_mezo.bind(
+                "<KeyRelease>",
+                lambda e, combo=partner_mezo: self._partner_szures(e, combo, partner_lista),
             )
 
             munka_valt = tk.StringVar(value=adat["munkaszam"])
             munka_mezo = tk.Entry(sor, textvariable=munka_valt, width=14)
-            munka_mezo.pack(side="left", padx=2)
+            munka_mezo.grid(row=0, column=4, sticky="w", padx=2)
 
-            teendo_cimke = tk.Label(sor, text="", width=22, anchor="w")
-            teendo_cimke.pack(side="left", padx=2)
+            # nincs fix szélesség: a (néha hosszabb) teendő-szöveg teljesen kiférjen
+            teendo_cimke = tk.Label(sor, text="", anchor="w")
+            teendo_cimke.grid(row=0, column=5, sticky="w", padx=2)
 
             self.sor_widgetek.append(
                 {
@@ -294,6 +325,21 @@ class App:
                 valt.trace_add("write", lambda *_: self._frissit_kiemelesek())
 
         self._frissit_kiemelesek()
+
+    def _partner_szures(self, event, combo: ttk.Combobox, teljes: list[str]) -> None:
+        """Gépelés közben a partner-legördülő választékát a beírt szövegre szűkíti.
+
+        Ékezet- és kisbetű-érzéketlen (a ``partners._kulcs`` szerint), tartalmazás alapján.
+        Ha a beírt név egyik ismert partnerre sem illik, marad amit beírt — mentéskor
+        ÚJ partnerként megjegyezzük. A navigációs/választó billentyűkbe nem szólunk bele."""
+        if event.keysym in ("Up", "Down", "Return", "Escape", "Tab", "Left", "Right"):
+            return
+        szoveg = combo.get().strip()
+        if not szoveg:
+            combo["values"] = teljes
+            return
+        kulcs = partners._kulcs(szoveg)
+        combo["values"] = [p for p in teljes if kulcs in partners._kulcs(p)]
 
     def _frissit_kiemelesek(self) -> None:
         """A figyelmet igénylő sorokat kiemeli (sárga munkaszám-mező + rövid teendő-szöveg).
